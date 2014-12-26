@@ -6,10 +6,10 @@ arch=i386
 suite=trusty
 chroot_dir='/var/chroot/trusty'
 apt_mirror='http://archive.ubuntu.com/ubuntu'
-docker_image='ubuntu-x32:14.04'
+docker_image='demontsai/ubuntu-x32:14.04'
 
 ### make sure that the required tools are installed
-apt-get install -y docker.io debootstrap dchroot
+apt-get install -y debootstrap dchroot
 
 ### install a minbase system with debootstrap
 export DEBIAN_FRONTEND=noninteractive
