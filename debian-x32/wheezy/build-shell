@@ -6,7 +6,7 @@ arch=i386
 suite=wheezy
 chroot_dir='/var/chroot/wheezy'
 apt_mirror='http://http.debian.net/debian'
-docker_image='demontsai/debian-x32:wheezy'
+docker_image='debian-x32:wheezy'
 
 ### make sure that the required tools are installed
 apt-get install -y debootstrap dchroot
