@@ -17,9 +17,9 @@ debootstrap --arch $arch $suite $chroot_dir $apt_mirror
 
 ### update the list of package sources
 cat <<EOF > $chroot_dir/etc/apt/sources.list
-deb $apt_mirror wheezy main contrib non-free
-deb $apt_mirror wheezy-updates main contrib non-free
-deb http://security.debian.org/ wheezy/updates main contrib non-free
+deb $apt_mirror $suite main contrib non-free
+deb $apt_mirror $suite-updates main contrib non-free
+deb http://security.debian.org/ $suite/updates main contrib non-free
 EOF
 
 ### cleanup
