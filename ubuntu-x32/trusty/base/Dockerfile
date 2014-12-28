@@ -14,9 +14,9 @@ MAINTAINER Demon Tsai demontsai@estinet.com
 
 
 ##### Update system and install apps
-RUN     apt-get upgrade -qq
-RUN     apt-get update -qq
-RUN     apt-get install -qqy openssh-server screen vim git gitk gnome-terminal
+#RUN     apt-get upgrade -qq
+#RUN     apt-get update -qq
+#RUN     apt-get install -qqy openssh-server screen vim git gitk gnome-terminal
 
 
 ##### Create an user account and assign password to it
@@ -33,16 +33,16 @@ RUN     mv /tmp/estinet /etc/sudoers.d/estinet
 
 
 ##### SSH setting
-RUN     sudo -u estinet /usr/bin/ssh-keygen -t ecdsa -N "" -f /home/estinet/.ssh/id_ecdsa
-RUN     sudo -u estinet /usr/bin/ssh-keygen -t rsa -N "" -f /home/estinet/.ssh/id_rsa
-RUN     mkdir -p /var/run/sshd
+#RUN     sudo -u estinet /usr/bin/ssh-keygen -t ecdsa -N "" -f /home/estinet/.ssh/id_ecdsa
+#RUN     sudo -u estinet /usr/bin/ssh-keygen -t rsa -N "" -f /home/estinet/.ssh/id_rsa
+#RUN     mkdir -p /var/run/sshd
 
 
 ##### Screen setting
-#COPY    screenrc /etc/
+#COPY    ../../config/screenrc /etc/
 #RUN     mkdir -p /var/run/screen
 #RUN     chmod 0777 /var/run/screen
 
 
 ##### Vim
-#COPY    vimrc.local /etc/vim/
+#COPY    /home/demon/docker/Dockerfile/config/vimrc.local /etc/vim/
