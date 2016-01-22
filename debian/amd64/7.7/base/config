@@ -1,0 +1,14 @@
+#!/bin/bash
+
+
+##### .bashrc setting
+echo 'PATH=$PATH:/sbin' >> /home/estinet/.bashrc
+echo 'alias ll=\'ls -al --color=auto\'' >> /home/estinet/.bashrc
+echo 'bashrc setting done'
+
+
+##### SSH setting
+sudo -u estinet /usr/bin/ssh-keygen -t ecdsa -N "" -f /home/estinet/.ssh/id_ecdsa
+sudo -u estinet /usr/bin/ssh-keygen -t rsa -N "" -f /home/estinet/.ssh/id_rsa
+mkdir -p /var/run/sshd
+echo 'SSH setting done'

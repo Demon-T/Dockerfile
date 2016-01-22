@@ -1,0 +1,27 @@
+#!/bin/bash
+
+container_id=$(sudo docker run -d --net=none -v /home/demon/code/estinet:/home/estinet/code ubuntu-x32-base /usr/sbin/sshd -D)
+pid=$(sudo docker inspect -f '{{.State.Pid}}' $container_id)
+
+echo 'create a vm, container:' $container_id ', pid:' $pid
+
+mkdir -p /var/run/netns
+ln -s /proc/$pid/ns/net /var/run/netns/$pid
+
+echo 'create directory:' $(ls /var/run/netns)
+
+veth=veth$pid
+eth=eth$pid
+ip=$1/24
+
+echo 'ip='$ip 'veth='$veth 'eth='$eth
+
+ip link add $veth type veth peer name $eth
+brctl addif br0 $veth
+ip link set $veth up
+
+ip link set $eth netns $pid
+ip netns exec $pid ip link set dev $eth name eth0
+ip netns exec $pid ip link set eth0 up
+ip netns exec $pid ip addr add $ip dev eth0
+ip netns exec $pid ip route add default via 192.168.10.1

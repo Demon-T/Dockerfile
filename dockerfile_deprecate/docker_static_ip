@@ -1,7 +1,7 @@
 #!/bin/bash
 
-container_id=$(sudo docker run -d --net=none -v /home/demon/code/estinet:/home/estinet/code base /usr/sbin/sshd -D)
-pid=$(sudo docker inspect -f '{{.State.Pid}}' $container_id)
+#container_id=$(sudo docker run -d --net=none -v /home/demon/code/estinet:/home/estinet/code base /usr/sbin/sshd -D)
+pid=$(sudo docker inspect -f '{{.State.Pid}}' $1)
 
 echo 'create a vm, container:' $container_id ', pid:' $pid
 
@@ -12,7 +12,7 @@ echo 'create directory:' $(ls /var/run/netns)
 
 veth=veth$pid
 eth=eth$pid
-ip=$1/24
+ip=$2/24
 
 echo 'ip='$ip 'veth='$veth 'eth='$eth
 

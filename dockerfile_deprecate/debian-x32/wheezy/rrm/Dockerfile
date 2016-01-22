@@ -1,6 +1,6 @@
 #######################################################
-# This dockerfile builds a clean ubuntu 14.04 and     #
-# including samba, ssh, etc..., basic apps.           #
+# This dockerfile builds a clean debian 7.7 and       #
+# including vim, ssh, etc..., basic apps.             #
 #                                                     #
 # Author: Demon Tsai                                  #
 #                                                     #
@@ -8,7 +8,7 @@
 #                                                     #
 #######################################################
 
-FROM ubuntu:14.04
+FROM    demontsai/debian-x32:wheezy
 
 MAINTAINER Demon Tsai demontsai@estinet.com
 
@@ -16,7 +16,8 @@ MAINTAINER Demon Tsai demontsai@estinet.com
 ##### Update system and install apps
 RUN     apt-get upgrade -qq
 RUN     apt-get update -qq
-RUN     apt-get install -qqy openssh-server screen vim git gitk gcc gnome-terminal
+RUN     apt-get install -qqy sudo openssh-server screen vim git gitk gnome-terminal
+RUN     apt-get clean
 
 
 ##### Create an user account and assign password to it

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sudo service openvswitch-switch start
+sudo /usr/sbin/sshd -D
