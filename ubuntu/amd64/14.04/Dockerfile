@@ -1,6 +1,6 @@
 #######################################################
 # This dockerfile builds a clean ubuntu 14.04 and     #
-# including ssh, git, etc..., basic apps.             #
+# including ssh, git, vim, etc..., basic apps.        #
 #                                                     #
 # Author: Demon Tsai                                  #
 # Repository: demontsai/ubuntu64:14.04                #
