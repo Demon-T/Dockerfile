@@ -1,5 +1,5 @@
 ##### opendaylight
-1. docker run -it --restart=always -h dev-odl --name dev_odl --privileged=true -p 6622:22 -p 6633:6633 -p 6653:6653 -v /home/demon/Docker/code/opendaylight:/home/estinet/code demontsai/opendaylight bash
+1. docker run -it --restart=always -h dev-odl --name dev_odl --privileged=true -p 6622:22 -p 6633:6633 -p 6653:6653 -p 8181:8181 -v /home/demon/Docker/code/opendaylight:/home/estinet/code demontsai/opendaylight bash
 
 
 ##### mininet

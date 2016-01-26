@@ -27,7 +27,7 @@ RUN     cp ~/.m2/settings.xml{,.orig} ; \wget -q -O - $MVN_SETTING_URL > ~/.m2/s
 
 
 ##### Expose port for controller
-EXPOSE  6633 6653
+EXPOSE  6633 6653 8181
 
 
 ##### Sync source code folder
