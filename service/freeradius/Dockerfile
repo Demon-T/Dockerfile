@@ -46,6 +46,7 @@ RUN     tar xzvf freeradius-server-$FREERADIUS_VERSION.tar.gz
 WORKDIR /root/freeradius-server-$FREERADIUS_VERSION
 RUN     dpkg-buildpackage -b -uc
 RUN     dpkg -i ../*.deb
+WORKDIR /root
 RUN     touch /etc/freeradius/radius.log
 RUN     chown freerad:freerad /etc/freeradius/radius.log
 
@@ -57,10 +58,10 @@ RUN     apt-get clean
 RUN     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/*freeradius*
 
 ##### User
-WORKDIR /home/radius
-USER    radius
+#WORKDIR /home/radius
+#USER    radius
 
-ENTRYPOINT  sudo freeradius -X -l /etc/freeradius/radius.log
+#ENTRYPOINT  sudo freeradius -X -l /etc/freeradius/radius.log
 
 
 
