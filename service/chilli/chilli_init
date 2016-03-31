@@ -1,0 +1,19 @@
+#!/bin/bash
+
+CHILLI=/etc/chilli
+
+
+config_list=($(printenv | grep HS_))
+
+for config in ${config_list[@]};
+do
+    chilli_cfg $config
+done
+
+export -n ${config_list[@]} > /dev/null
+
+
+sudo sed -i 's/START_CHILLI=.*$/START_CHILLI=1/' /etc/default/chilli
+
+[ "$(sudo sed -n '/POSTROUTING -t nat/p' $CHILLI/up.sh)" ] || \
+sudo sed -i '85 i \ \ \ \ ipt -A POSTROUTING -t nat -s $HS_NETWORK/$HS_NETMASK -o $HS_WANIF -j MASQUERADE' $CHILLI/up.sh

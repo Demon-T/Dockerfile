@@ -1,0 +1,21 @@
+#!/bin/bash
+
+CHILLI=/etc/chilli
+
+[ -f "$CHILLI/config" ] || sudo cp $CHILLI/defaults $CHILLI/config
+
+
+for config in $*;
+do
+    echo "config $config"
+
+    argv=($(echo $config | sed 's/=/ /g'))
+
+    if [ ${#argv[@]} == 1 ]; then
+        sudo sed -i "s/.*${argv[0]}=.*/#$config=/" $CHILLI/config
+    elif [ ${#argv[@]} == 2 ]; then
+        sudo sed -i "s/.*${argv[0]}=.*/$config/" $CHILLI/config
+    else
+        echo "Wrong parameter: $config, format: cfg_name=cfg_value."
+    fi
+done
