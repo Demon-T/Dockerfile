@@ -17,7 +17,7 @@ RUN     echo "Asia/Taipei" > /etc/timezone
 RUN     dpkg-reconfigure --frontend noninteractive tzdata
 
 ##### Update system and install apps
-RUN     apt-get update && apt-get -y upgrade
+RUN     apt-get update
 RUN     apt-get install -y vim wget dpkg-dev ssl-cert quilt fakeroot\
         libcurl4-openssl-dev libcap-dev libjson0-dev libjson-c-dev \
         libreadline-dev libsqlite3-dev libtalloc-dev libwbclient-dev \
@@ -51,7 +51,7 @@ RUN     touch /etc/freeradius/radius.log
 RUN     chown freerad:freerad /etc/freeradius/radius.log
 
 EXPOSE  18120/udp 1812/udp 1813/udp
-VOLUME  ["/etc/freeradius/"]
+#VOLUME  ["/etc/freeradius/"]
 
 ##### Clean
 RUN     apt-get clean
