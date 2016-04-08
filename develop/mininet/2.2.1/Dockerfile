@@ -30,6 +30,7 @@ RUN     git checkout -b $MININET_VERSION $MININET_VERSION
 RUN     $MININET_INSTALLER $MININET_OPT
 RUN     echo "service openvswitch-switch start" >> $ENTRYPOINT
 RUN 	echo "/usr/sbin/sshd -D" >> $ENTRYPOINT
+WORKDIR /root
 
 ##### Sync source code folder
 VOLUME  ["/root/code"]
@@ -37,15 +38,12 @@ VOLUME  ["/root/code"]
 ##### SSH setting
 RUN     sudo -u estinet /usr/bin/ssh-keygen -t ecdsa -N "" -f /home/estinet/.ssh/id_ecdsa
 RUN     sudo -u estinet /usr/bin/ssh-keygen -t rsa -N "" -f /home/estinet/.ssh/id_rsa
-RUN     /usr/bin/ssh-keygen -t ecdsa -N "" -f /root/.ssh/id_ecdsa
-RUN     /usr/bin/ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
 RUN     mkdir -p /var/run/sshd
 EXPOSE  22
 
 ##### Clean
 RUN     apt-get clean
-RUN     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/installation/*
 
 ##### Command
 ENTRYPOINT $ENTRYPOINT
-#CMD     ["sh", "/root/entrypoint.sh"]
