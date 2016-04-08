@@ -14,8 +14,8 @@ MAINTAINER Demon Tsai demontsai@estinet.com
 
 
 ##### Update system and install apps
-RUN     sudo apt-get -qq update && sudo apt-get -qq upgrade
-
+RUN     apt-get -qq update
+RUN	apt-get -qqy install openssh-server
 
 ##### Environment
 ENV     MININET_REPO git://github.com/mininet/mininet
@@ -23,25 +23,29 @@ ENV     MININET_VERSION 2.2.1
 ENV     MININET_INSTALLER util/install.sh
 ENV     MININET_OPT -nfv
 
-
 ##### Mininet install
-RUN     git clone $MININET_REPO $INSTALL_PATH/mininet
-WORKDIR $INSTALL_PATH/mininet
+RUN     git clone $MININET_REPO /root/installation/mininet
+WORKDIR /root/installation/mininet
 RUN     git checkout -b $MININET_VERSION $MININET_VERSION
-RUN     sudo $MININET_INSTALLER $MININET_OPT
-RUN     echo "sudo service openvswitch-switch start" >> $RUN_BASH
-RUN     echo "/bin/bash" >> $RUN_BASH
-WORKDIR $HOME
-
+RUN     $MININET_INSTALLER $MININET_OPT
+RUN     echo "service openvswitch-switch start" >> $ENTRYPOINT
+RUN 	echo "/usr/sbin/sshd -D" >> $ENTRYPOINT
 
 ##### Sync source code folder
-VOLUME  ["/home/estinet/code"]
+VOLUME  ["/root/code"]
 
+##### SSH setting
+RUN     sudo -u estinet /usr/bin/ssh-keygen -t ecdsa -N "" -f /home/estinet/.ssh/id_ecdsa
+RUN     sudo -u estinet /usr/bin/ssh-keygen -t rsa -N "" -f /home/estinet/.ssh/id_rsa
+RUN     /usr/bin/ssh-keygen -t ecdsa -N "" -f /root/.ssh/id_ecdsa
+RUN     /usr/bin/ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+RUN     mkdir -p /var/run/sshd
+EXPOSE  22
 
 ##### Clean
-RUN     sudo apt-get clean
-RUN     sudo rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
+RUN     apt-get clean
+RUN     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ##### Command
-CMD     ["bash", "/home/estinet/start/run.bash"]
+ENTRYPOINT $ENTRYPOINT
+#CMD     ["sh", "/root/entrypoint.sh"]
