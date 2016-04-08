@@ -17,16 +17,13 @@ MAINTAINER Demon Tsai demontsai@estinet.com
 RUN     echo "Asia/Taipei" > /etc/timezone
 RUN     dpkg-reconfigure --frontend noninteractive tzdata
 
-
 ##### Update system and install apps
-RUN     apt-get update -qq && apt-get upgrade -qq
-RUN     apt-get install -qqy openssh-server screen vim git gitk wget curl
-
+RUN     apt-get -qq update
+RUN     apt-get -qqy install vim git wget curl
 
 ##### Create an user account and assign password to it
 RUN     useradd -m  estinet && adduser estinet sudo && chsh -s /bin/bash estinet
 RUN     echo "estinet:estinet" | chpasswd
-
 
 ##### Join the user to sudoers
 RUN     echo 'estinet ALL=(ALL) NOPASSWD:ALL' > /tmp/estinet
@@ -35,43 +32,46 @@ RUN     chmod 0440 /tmp/estinet
 RUN     chown root:root /tmp/estinet
 RUN     mv /tmp/estinet /etc/sudoers.d/estinet
 
-
 ##### SSH setting
-RUN     sudo -u estinet /usr/bin/ssh-keygen -t ecdsa -N "" -f /home/estinet/.ssh/id_ecdsa
-RUN     sudo -u estinet /usr/bin/ssh-keygen -t rsa -N "" -f /home/estinet/.ssh/id_rsa
-RUN     mkdir -p /var/run/sshd
-EXPOSE  22
-
+#RUN     sudo -u estinet /usr/bin/ssh-keygen -t ecdsa -N "" -f /home/estinet/.ssh/id_ecdsa
+#RUN     sudo -u estinet /usr/bin/ssh-keygen -t rsa -N "" -f /home/estinet/.ssh/id_rsa
+#RUN     mkdir -p /var/run/sshd
+#EXPOSE  22
 
 ##### Screen setting
-COPY    screenrc /etc/
-RUN     mkdir -p /var/run/screen
-RUN     chmod 0777 /var/run/screen
-
+#COPY    screenrc /etc/
+#RUN     mkdir -p /var/run/screen
+#RUN     chmod 0777 /var/run/screen
 
 ##### Vim
 COPY    vimrc.local /etc/vim/
-
 
 ##### Clean
 RUN     apt-get clean
 RUN     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-
 ##### User
-USER    estinet
-ENV     HOME            /home/estinet
-ENV     CODE_PATH       $HOME/code
-ENV     INSTALL_PATH    $HOME/installation 
-ENV     RUN_BASH        $HOME/start/run.bash
-WORKDIR $HOME
-COPY    bashrc $HOME/.bashrc
-RUN     sudo chmod 0644 $HOME/.bashrc
-RUN     sudo chown estinet:estinet $HOME/.bashrc
-RUN     mkdir $CODE_PATH
-RUN     mkdir $INSTALL_PATH
-RUN     mkdir $HOME/start
-RUN     touch $RUN_BASH
-RUN     echo "#!/bin/bash" >> $RUN_BASH
+#USER    estinet
+#ENV     HOME            /home/estinet
+#ENV     CODE_PATH       $HOME/code
+#ENV     INSTALL_PATH    $HOME/installation 
+#ENV     RUN_BASH        $HOME/start/run.bash
+#WORKDIR $HOME
+COPY    bashrc /home/estinet/.bashrc
+RUN     chmod 0644 /home/estinet/.bashrc
+RUN     chown estinet:estinet /home/estinet/.bashrc
+RUN     mkdir /home/estinet/code
+RUN     mkdir /home/estinet/installation
 
+COPY    bashrc /root/.bashrc
+RUN     chmod 0644 /root/.bashrc
+RUN     chown root:root /root/.bashrc
+RUN     mkdir /root/code
+RUN     mkdir /root/installation
+
+RUN     touch /root/entrypoint.sh
+RUN 	chmod 755 /root/entrypoint.sh
+RUN     echo "#!/bin/sh" >> /root/entrypoint.sh
+
+WORKDIR /root
 
