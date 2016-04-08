@@ -75,4 +75,5 @@ RUN 	chmod 755 $ENTRYPOINT
 RUN     echo "#!/bin/sh" >> $ENTRYPOINT
 
 WORKDIR /root
+RUN 	echo "root:root" | chpasswd
 
