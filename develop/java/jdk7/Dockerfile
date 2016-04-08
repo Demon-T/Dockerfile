@@ -17,11 +17,9 @@ MAINTAINER Demon Tsai demontsai@estinet.com
 ENV     JAVA_VERSION    7
 ENV     JAVA_HOME       /usr/lib/jvm/java-$JAVA_VERSION-openjdk-amd64/jre
 
-
 ##### Update system and install apps
-RUN     sudo apt-get -qq update && sudo apt-get -qq upgrade
+RUN     sudo apt-get -qq update
 RUN     sudo apt-get -qqy install openjdk-$JAVA_VERSION-jdk
-
 
 ##### Clean
 RUN     sudo apt-get clean
