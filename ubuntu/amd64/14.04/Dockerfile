@@ -55,8 +55,9 @@ RUN     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 #ENV     HOME            /home/estinet
 #ENV     CODE_PATH       $HOME/code
 #ENV     INSTALL_PATH    $HOME/installation 
-#ENV     RUN_BASH        $HOME/start/run.bash
 #WORKDIR $HOME
+ENV 	ENTRYPOINT	/root/entrypoint.sh
+
 COPY    bashrc /home/estinet/.bashrc
 RUN     chmod 0644 /home/estinet/.bashrc
 RUN     chown estinet:estinet /home/estinet/.bashrc
@@ -69,9 +70,9 @@ RUN     chown root:root /root/.bashrc
 RUN     mkdir /root/code
 RUN     mkdir /root/installation
 
-RUN     touch /root/entrypoint.sh
-RUN 	chmod 755 /root/entrypoint.sh
-RUN     echo "#!/bin/sh" >> /root/entrypoint.sh
+RUN     touch $ENTRYPOINT
+RUN 	chmod 755 $ENTRYPOINT
+RUN     echo "#!/bin/sh" >> $ENTRYPOINT
 
 WORKDIR /root
 
