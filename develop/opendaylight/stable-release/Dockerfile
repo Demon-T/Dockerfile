@@ -27,19 +27,18 @@ RUN     mkdir ~/.m2
 RUN 	wget -q -O - $MVN_SETTING_URL > ~/.m2/settings.xml
 
 ##### Controller
-RUN 	wget -q $CONTROLLER_URL/$CONTROLLER_VERSION/$CONTROLLER_NAME-$CONTROLLER_VERSION.tar.gz
-RUN 	tar xzvf $CONTROLLER_NAME-$CONTROLLER_VERSION.tar.gz
-RUN 	echo "./$CONTROLLER_NAME-$CONTROLLER_VERSION/bin/karaf clean" >> $ENTRYPOINT
+RUN	echo '[ -d \"$CONTROLLER_NAME-$CONTROLLER_VERSION\" ] || {' >> $ENTRYPOINT
+RUN 	echo '    wget $CONTROLLER_URL/$CONTROLLER_VERSION/$CONTROLLER_NAME-$CONTROLLER_VERSION.tar.gz' >> $ENTRYPOINT
+RUN 	echo '    tar xzvf $CONTROLLER_NAME-$CONTROLLER_VERSION.tar.gz' >> $ENTRYPOINT
+RUN	echo '}' >> $ENTRYPOINT
+RUN 	echo './$CONTROLLER_NAME-$CONTROLLER_VERSION/bin/karaf clean' >> $ENTRYPOINT
 
 ##### Expose port for controller
 EXPOSE  6633 8181
 
-##### Sync source code folder
-VOLUME  ["/root/$CONTROLLER_NAME-$CONTROLLER_VERSION/data/log"]
-
 ##### Clean
 RUN     apt-get clean
-RUN     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* $CONTROLLER_NAME-$CONTROLLER_VERSION.tar.gz
+RUN     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* *.tar.gz
 
 ##### Command
 ENTRYPOINT $ENTRYPOINT
