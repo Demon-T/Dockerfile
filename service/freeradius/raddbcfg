@@ -1,0 +1,42 @@
+#!/bin/bash
+
+
+[ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ] && {
+    echo "radcfg cfg_name=cfg_value [...]"
+    exit 0
+}
+
+[ -f "$SQL_CFG" ] || {
+    echo "SQL config file is not exist." >&2    
+    exit 1
+}
+
+for argv in $*
+do
+    echo "db config: "$argv
+
+    cfg=($(echo $argv | sed 's/=/ /g'))
+
+    [ ${#cfg[@]} -le 1 ] && {
+        echo "Wrong sql config argument!" >&2
+        exit 1
+    }
+
+    case "${cfg[0]}" in
+        port)
+            sed -i "s/${cfg[0]} = .*/${cfg[0]} = ${cfg[1]}/1" $SQL_CFG
+            ;;
+
+        server | radius_db | login | password)
+            sed -i "s/${cfg[0]} = .*/${cfg[0]} = \"${cfg[1]}\"/1" $SQL_CFG
+            ;;
+
+        *)
+            echo "SQL config args: {server|port|radius_db|login|password}" >&2
+            exit 1
+            ;;
+    esac
+done
+
+exit 0
+

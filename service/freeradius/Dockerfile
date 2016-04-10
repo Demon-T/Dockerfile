@@ -7,61 +7,51 @@
 #                                                     #
 #######################################################
 
-FROM ubuntu:14.04
+FROM demontsai/ubuntu64:14.04
 
 MAINTAINER Demon Tsai demontsai@estinet.com
 
 
-##### Adjust time zone
-RUN     echo "Asia/Taipei" > /etc/timezone
-RUN     dpkg-reconfigure --frontend noninteractive tzdata
-
 ##### Update system and install apps
-RUN     apt-get update
-RUN     apt-get install -y vim wget dpkg-dev ssl-cert quilt fakeroot\
+RUN     apt-get -qq update
+RUN     apt-get -qqy install vim wget dpkg-dev ssl-cert quilt fakeroot\
         libcurl4-openssl-dev libcap-dev libjson0-dev libjson-c-dev \
         libreadline-dev libsqlite3-dev libtalloc-dev libwbclient-dev \
         libyubikey-dev libykclient-dev libmemcached-dev libhiredis-dev samba-dev
 RUN     apt-get -y build-dep freeradius
 
 ##### Environment
-ENV     FREERADIUS_VERSION  3.0.11
-ENV     FREERADIUS_URL      ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-$FREERADIUS_VERSION.tar.gz
-
-##### Create an user account and assign password to it
-RUN     useradd -m  radius && adduser radius sudo && chsh -s /bin/bash radius
-RUN     echo "radius:radius" | chpasswd
-
-##### Join the user to sudoers
-RUN     echo 'radius ALL=(ALL) NOPASSWD:ALL' > /tmp/radius
-RUN     echo 'Defaults:radius !requiretty' >> /tmp/radius
-RUN     chmod 0440 /tmp/radius
-RUN     chown root:root /tmp/radius
-RUN     mv /tmp/radius /etc/sudoers.d/radius
+ENV     FREERADIUS_VERSION  	3.0.11
+ENV     FREERADIUS_URL      	ftp://ftp.freeradius.org/pub/freeradius/freeradius-server-$FREERADIUS_VERSION.tar.gz
+ENV	SQL_CFG			/etc/freeradius/mods-enabled/sql
 
 ##### Install freeradius
 WORKDIR /root
 RUN     wget $FREERADIUS_URL
 RUN     tar xzvf freeradius-server-$FREERADIUS_VERSION.tar.gz
-WORKDIR /root/freeradius-server-$FREERADIUS_VERSION
+WORKDIR freeradius-server-$FREERADIUS_VERSION
 RUN     dpkg-buildpackage -b -uc
 RUN     dpkg -i ../*.deb
 WORKDIR /root
-RUN     touch /etc/freeradius/radius.log
-RUN     chown freerad:freerad /etc/freeradius/radius.log
+RUN	sed -i 's/FREERADIUS_OPTIONS=.*/FREERADIUS_OPTIONS=\"-f -X -P\"/1' /etc/default/freeradius
+RUN 	cp /etc/freeradius/mods-available/sql $SQL_CFG
+RUN 	sed -i 's/"rlm_sql_null"/"rlm_sql_mysql"/1' $SQL_CFG
+RUN 	sed -i 's/dialect = "sqlite"/dialect = "mysql"/1' $SQL_CFG
+RUN	sed -i 's/.*read_clients = yes/    read_clients = yes/1' $SQL_CFG
+RUN	sed -i 's/.*server = "localhost"/    server = "localhost"/1' $SQL_CFG
+RUN	sed -i 's/.*port = 3306/    port = 3306/1' $SQL_CFG
+RUN	sed -i 's/.*login = "radius"/    login = "radius"/1' $SQL_CFG
+RUN	sed -i 's/.*password = "radpass"/    password = "radpass"/1' $SQL_CFG
+COPY 	raddbcfg /usr/sbin/raddbcfg
+COPY	radinit /usr/sbin/radinit
+RUN 	echo "radinit && service freeradius start" >> $ENTRYPOINT
 
-EXPOSE  18120/udp 1812/udp 1813/udp
-#VOLUME  ["/etc/freeradius/"]
+EXPOSE  1812/udp 1813/udp
 
 ##### Clean
 RUN     apt-get clean
 RUN     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/*freeradius*
 
-##### User
-#WORKDIR /home/radius
-#USER    radius
-
-#ENTRYPOINT  sudo freeradius -X -l /etc/freeradius/radius.log
-
-
+##### Command
+ENTRYPOINT $ENTRYPOINT
 

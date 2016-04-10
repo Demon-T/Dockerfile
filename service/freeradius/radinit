@@ -1,0 +1,38 @@
+#!/bin/bash
+
+
+### Default
+db_server=${db_server:=localhost}
+db_port=${db_port:=3306}
+db_database=${db_database:=radius}
+db_login=${db_login:=radius}
+db_passwd=${db_passwd:=radpass}
+
+### link database env
+env_server=$(env | grep TCP_ADDR | cut -d '=' -f 2)
+env_port=$(env | grep TCP_PORT | cut -d '=' -f 2)
+env_passwd=$(env | grep MYSQL_ROOT_PASSWORD | cut -d '=' -f 2)
+env_database=$(env | grep MYSQL_DATABASE | cut -d '=' -f 2)
+env_user=$(env | grep MYSQL_USER | cut -d '=' -f 2)
+env_user_passwd=$(env | grep MYSQL_PASSWORD | cut -d '=' -f 2)
+
+db_server=${env_server:-$db_server}
+db_port=${env_port:-$db_port}
+db_database=${env_database:-$db_database}
+[ -z "$env_passwd" ] || db_login=root
+db_passwd=${env_passwd:-$db_passwd}
+db_login=${env_user:-$db_login}
+db_passwd=${env_user_passwd:-$db_passwd}
+
+### User defined
+db_server=${DB_SERVER:-$db_server}
+db_port=${DB_PORT:-$db_port}
+db_database=${DB_DATABASE:-$db_database}
+db_login=${DB_LOGIN:-$db_login}
+db_passwd=${DB_PASSWD:-$db_passwd}
+
+
+raddbcfg server=$db_server port=$db_port radius_db=$db_database login=$db_login password=$db_passwd
+
+exit 0
+
