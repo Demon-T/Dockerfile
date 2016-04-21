@@ -1,0 +1,340 @@
+#!/bin/bash
+
+DHCP_CFG=/etc/dhcp/dhcpd.conf
+
+TYPE=
+REMOVE=
+
+HOST=
+MAC=
+FIXED_IP=
+
+SUBNET=
+NETMASK=
+ROUTER=
+BROADCAST=
+RANGE=
+DOMAIN=
+DNS=
+DEFAULT_LEASE_TIME=
+MAX_LEASE_TIME=
+
+FIELD_U="host"
+FIELD_M="hardware ethernet"
+FIELD_F="fixed-address"
+FIELD_S="subnet"
+FIELD_N="netmask"
+FIELD_G="option routers"
+FIELD_B="option broadcast-address"
+FIELD_R="range"
+FIELD_O="option domain-name"
+FIELD_D="option domain-name-servers"
+FIELD_E="default-lease-time"
+FIELD_X="max-lease-time"
+
+UPDATE=
+DEBUG=
+ERROR_COLOR="\e[1;31m"
+INFO_COLOR="\e[1;33m"
+END_COLOR="\e[m"
+
+
+
+error_msg()
+{
+    echo -e $ERROR_COLOR"[ERROR] $*"$END_COLOR >&2
+}
+
+debug_msg()
+{
+    if [ "$DEBUG" ]; then
+        echo "[DEBUG] $*"
+    fi
+}
+
+info_msg()
+{
+    echo -e $INFO_COLOR"[ INFO] $*"$END_COLOR
+}
+
+global_cfg_set()
+{
+    debug_msg "set global config: $*"
+    [ $# -eq 2 ] && sed -i "1,6 s/$1 .*/$1 $2;/" $DHCP_CFG && return 0
+    return 1
+}
+
+remove_cfg()
+{
+    debug_msg "remove config: $*"
+    [ "$*" ] && sed -i "/$* .*{/, /}/ d" $DHCP_CFG && return 0
+    return 1
+}
+
+write_file()
+{
+    debug_msg "Write to config file with \"$*\"."
+
+    [ "$*" ] && cat << EOF >> $DHCP_CFG
+$*
+EOF
+}
+
+add_config()
+{
+    [ -z "$*" ] && error_msg "There is nothing to add." && exit 1
+
+    argc=$(($# + 1))
+
+    for (( i=1; i<=$argc ; i=i+1 ))
+    do
+        case $i in
+            1)
+                write_file "$1 {"
+                ;;
+            $argc)
+                write_file "}"
+                ;;
+            *)
+                [ "$1" ] && write_file "    $1"
+        esac
+
+        shift
+    done
+}
+
+update_config()
+{
+    debug_msg "update config: $*"
+
+    [ $# -eq 3 ] || error_msg "Wrong argumetns to update config: $*"
+
+    config=$(sed -n "/$1 .*{/, /}/ {/$2/ p}" $DHCP_CFG)
+
+    [ -z "$config" ] && sed -i "/$1 .*{/ a\ \ \ \ $2 $3;" $DHCP_CFG && return 0
+    [ "$config" ] && sed -i "/$1 .*{/, /}/ s/$2 .*/$2 $3;/" $DHCP_CFG && return 0
+
+    return 1
+}
+
+type_parse()
+{
+    [ -z $TYPE ] && error_msg "There is no type." && exit 1
+
+    case $TYPE in
+        host)
+            [ -z "$HOST" ] && error_msg "There is not mandatory(host name) arg!" && exit 1
+
+            key="$FIELD_U $HOST"
+
+            [ "$UPDATE" ] && {
+                [ "$MAC" ]      && update_config "$key" "$FIELD_M" "$MAC"
+                [ "$FIXED_IP" ] && update_config "$key" "$FIELD_F" "$FIXED_IP"
+
+                info_msg "Update config: \"$key\" successful!"
+                exit 0
+            }
+
+            [ "$REMOVE" ] && {
+                remove_cfg "$key"
+                info_msg "Remove config: \"$key\" successful!"
+                exit 0
+            }
+
+            [ -z "$MAC" ] || [ -z "$FIXED_IP" ] && error_msg "There is not mandatory arg to add host!" && exit 1
+
+            HOST=${HOST:+"$FIELD_U $HOST"}
+            MAC=${MAC:+"$FIELD_M $MAC;"}
+            FIXED_IP=${FIXED_IP:+"$FIELD_F $FIXED_IP;"}
+
+            add_config "$HOST" "$MAC" "$FIXED_IP"
+            info_msg "Add config: \"$key\" successful!"
+            ;;
+
+        subnet)
+            [ -z "$SUBNET" ] || [ -z "$NETMASK" ] && error_msg "There is not mandatory arg!" && exit 1
+
+            key="$FIELD_S $SUBNET $FIELD_N $NETMASK"
+
+            [ "$UPDATE" ] && {
+                [ "$RANGE" ]                && update_config "$key" "$FIELD_R" "$RANGE"
+                [ "$BROADCAST" ]            && update_config "$key" "$FIELD_B" "$BROADCAST"
+                [ "$ROUTER" ]               && update_config "$key" "$FIELD_G" "$ROUTER"
+                [ "$DOMAIN" ]               && update_config "$key" "$FIELD_O" "\"$DOMAIN\""
+                [ "$DNS" ]                  && update_config "$key" "$FIELD_D" "$DNS"
+                [ "$DEFAULT_LEASE_TIME" ]   && update_config "$key" "$FIELD_E" "$DEFAULT_LEASE_TIME"
+                [ "$MAX_LEASE_TIME" ]       && update_config "$key" "$FIELD_X" "$MAX_LEASE_TIME"
+
+                info_msg "Update config: \"$key\" successful!"
+                exit 0
+            }
+
+            [ "$REMOVE" ] && {
+                remove_cfg $key
+                info_msg "Remove config: \"$key\" successful!"
+                exit 0
+            }
+
+            [ -z "$RANGE" ] && error_msg "There is not mandatory(range) arg!" && exit 1
+
+            SUBNET=${SUBNET:+"$FIELD_S $SUBNET"}
+            NETMASK=${NETMASK:+"$FIELD_N $NETMASK"}
+            RANGE=${RANGE:+"$FIELD_R $RANGE;"}
+            BROADCAST=${BROADCAST:+"$FIELD_B $BROADCAST;"}
+            ROUTER=${ROUTER:+"$FIELD_G $ROUTER;"}
+            DOMAIN=${DOMAIN:+"$FIELD_O \"$DOMAIN\";"}
+            DNS=${DNS:+"$FIELD_D $DNS;"}
+            DEFAULT_LEASE_TIME=${DEFAULT_LEASE_TIME:+"$FIELD_E $DEFAULT_LEASE_TIME;"}
+            MAX_LEASE_TIME=${MAX_LEASE_TIME:+"$FIELD_X $MAX_LEASE_TIME;"}
+
+            add_config "$SUBNET $NETMASK" "$RANGE" "$BROADCAST" "$ROUTER" "$DOMAIN" "$DNS" "$DEFAULT_LEASE_TIME" "$MAX_LEASE_TIME"
+            info_msg "Add config: \"$key\" successful!"
+            ;;
+
+        global)
+            [ "$DOMAIN" ]               && global_cfg_set "$FIELD_O" "\"$DOMAIN\""
+            [ "$DNS" ]                  && global_cfg_set "$FIELD_D" "$DNS"
+            [ "$DEFAULT_LEASE_TIME" ]   && global_cfg_set "$FIELD_E" "$DEFAULT_LEASE_TIME"
+            [ "$MAX_LEASE_TIME" ]       && global_cfg_set "$FIELD_X" "$MAX_LEASE_TIME"
+            ;;
+
+        *)
+            error_msg "Wrong type: $TYPE!"
+            ;;
+    esac
+}
+
+help()
+{
+    tab="       "
+    echo "Usage: $(basename $0) [Option] [Value]"
+    echo "[Options]:"
+    echo "$tab -D                       Dump debug message."
+    echo "$tab -U                       Update host|subnet config"
+    echo "$tab -R                       Remove host|subnet config"
+    echo "$tab -T host|subnet|global    Type (mandatory)"
+    echo ""
+    echo "    In host type:"
+    echo "$tab -u name                  Host name (mandatory)"
+    echo "$tab -m macaddress            MAC address (mandatory)"
+    echo "$tab -f ip                    Host IP address (mandatory)"
+    echo ""
+    echo "    In subnet type:"
+    echo "$tab -s subnet                Subnet network (mandatory)"
+    echo "$tab -n netmask               Subnet netmask (mandatory)"
+    echo "$tab -r start_ip/end_ip       Dynamic IP range (mandtory)"
+    echo "$tab -g ip                    Router IP address"
+    echo "$tab -b broadcast             Broadcast address"
+    echo "$tab -d ip                    DNS IP address for specific subnet"
+    echo "$tab -o name                  Domain name for specific subnet"
+    echo "$tab -e time                  Default lease time for specific subnet"
+    echo "$tab -x time                  Max lease time for specific subnet"
+    echo ""
+    echo "    In global type:"
+    echo "$tab -d ip                    DNS IP address for global"
+    echo "$tab -o name                  Domain name for global"
+    echo "$tab -e time                  Default lease time for global"
+    echo "$tab -x time                  Max lease time for global"
+    echo ""
+    echo "$tab -p                       Dump DHCP config"
+    echo "$tab -h                       Help"
+}
+
+
+opt_parse()
+{
+    [ $# -eq 0 ] && error_msg "There is not any arguments!!" && exit 1
+
+    while getopts "DURT:u:m:f:s:n:g:b:r:d:o:e:x:ph" opt
+    do
+        case $opt in
+            ##### Type
+            T)
+                TYPE=$OPTARG
+                debug_msg "TYPE=$TYPE"
+                ;;
+            R)
+                REMOVE=true
+                debug_msg "REMOVE=$REMOVE"
+                ;;
+            D)
+                DEBUG=true
+                debug_msg "DEBUG=$DEBUG"
+                ;;
+            U)
+                UPDATE=true
+                debug_msg "UPDATE=$UPDATE"
+                ;;
+
+            ##### Host
+            u)
+                HOST=$OPTARG
+                debug_msg "HOST=$HOST"
+                ;;
+            m)
+                MAC=$OPTARG
+                debug_msg "MAC=$MAC"
+                ;;
+            f)
+                FIXED_IP=$OPTARG
+                debug_msg "FIXED_IP=$FIXED_IP"
+                ;;
+
+            ##### Subnet
+            s)
+                SUBNET=$OPTARG
+                debug_msg "SUBNET=$SUBNET"
+                ;;
+            n)
+                NETMASK=$OPTARG
+                debug_msg "NETMASK=$NETMASK"
+                ;;
+            g)
+                [ -z $ROUTER ] || ROUTER=$ROUTER', '$OPTARG
+                ROUTER=${ROUTER:-$OPTARG}
+                debug_msg "ROUTER=$ROUTER"
+                ;;
+            b)
+                BROADCAST=$OPTARG
+                debug_msg "BROADCAST=$BROADCAST"
+                ;;
+            r)
+                RANGE=$(echo $OPTARG | sed -n 's/[:-\/]/ /p')
+                debug_msg "RANGE=$RANGE"
+                ;;
+            d)
+                [ -z $DNS ] || DNS=$DNS' '$OPTARG
+                DNS=${DNS:-$OPTARG}
+                debug_msg "DNS=$DNS"
+                ;;
+            o)
+                DOMAIN=$OPTARG
+                debug_msg "DOMAIN=$DOMAIN"
+                ;;
+            e)
+                DEFAULT_LEASE_TIME=$OPTARG
+                debug_msg "DEFAULT_LEASE_TIME=$DEFAULT_LEASE_TIME"
+                ;;
+            x)
+                MAX_LEASE_TIME=$OPTARG
+                debug_msg "MAX_LEASE_TIME=$MAX_LEASE_TIME"
+                ;;
+            p)
+                echo "===== DHCP config ====="
+                cat $DHCP_CFG
+                exit 0
+                ;;
+            h)
+                help
+                exit 0
+                ;;
+            *)
+                error_msg "Wrong arguments: $*"
+                return 1
+                ;;
+        esac
+    done
+}
+
+opt_parse $* && type_parse
+

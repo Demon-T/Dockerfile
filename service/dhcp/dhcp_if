@@ -1,0 +1,19 @@
+#!/bin/bash
+
+CMD=$(basename $0)
+IF_CONFIG=/etc/default/isc-dhcp-server
+
+
+help_print()
+{
+    echo "$CMD [interface 1] [interface 2] ..."
+    echo "$CMD dump"
+}
+
+[ $# -eq 0 ] && echo "There is not any args." && exit 0
+
+[ $1 == "-h" -o $1 == "--help" -o $1 == "?" ] && help_print && exit 0
+
+[ $1 == "dump" ] && cat $IF_CONFIG | grep "INTERFACES=" && exit 0
+
+sed -i "s/INTERFACES=.*/INTERFACES=\"$*\"/" $IF_CONFIG
