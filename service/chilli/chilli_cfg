@@ -2,12 +2,22 @@
 
 CHILLI=/etc/chilli
 
-[ -f "$CHILLI/config" ] || sudo cp $CHILLI/defaults $CHILLI/config
+[ "$1" == "-h" -o "$1" == "--help" ] && {
+    echo "chilli_cfg dev cfg_name=cfg_value [...]"
+    echo "chilli_cfg printcfg"
+    exit 0
+}
 
+[ "$1" == "printcfg" ] && {
+    cat $CHILLI/defaults | grep HS_
+    exit 0
+}
+
+[ -f "$CHILLI/config" ] || cp $CHILLI/defaults $CHILLI/config
 
 for config in $*;
 do
-    echo "config $config"
+    echo "chilli config: $config"
 
     argv=($(echo $config | sed 's/=/ /g'))
 
