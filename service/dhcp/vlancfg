@@ -1,0 +1,192 @@
+#!/bin/bash
+
+VLANCFG=/var/vlanif/vlanif.conf
+DEVICE=
+MACVLAN=
+NAME=
+VLANID=
+IPADDR=
+NETMASK=
+BROADCAST=
+REMOVE=
+RECOVERY=
+UPDATE=
+
+ERROR_COLOR="\e[1;31m"
+INFO_COLOR="\e[1;33m"
+END_COLOR="\e[m"
+
+
+
+error_msg()
+{
+    echo -e $ERROR_COLOR"[ERROR] $*"$END_COLOR >&2
+}
+
+help_dump()
+{
+    echo "usage: vlancfg [OPTIONS]"
+    echo "OPTIONS:"
+    echo -e "\t-d <device>\t:Delete device."
+    echo -e "\t-i <device>\t:Device you want to add vlan."
+    echo -e "\t-n <name>\t:New vlan device name you want to add."
+    echo -e "\t-v <vlan id>\t:VLAN id you want to add."
+    echo -e "\t-U\t\t:Update interface config."
+    echo -e "\t-R\t\t:Recovery interface previous config."
+    echo -e "\t-I <address>\t:IP address on new vlan device."
+    echo -e "\t-N <address>\t:Netmask on new vlan device."
+    echo -e "\t-B <address>\t:Broadcast on new vlan device."
+    echo -e "\t-h\t\t:Help."
+}
+
+recovery()
+{
+    [ -f "$VLANCFG" ] || {
+        mkdir /var/vlanif
+        touch $VLANCFG
+        return 0
+    }
+
+    . $VLANCFG
+
+    return 0
+}
+
+if_check()
+{
+    [ "$(ip link show $MACVLAN 2>/dev/null)" ] && [ "$(ip link show $NAME 2>/dev/null)" ] && return 0
+
+    return 1
+}
+
+remove_device()
+{
+    [ $NAME ] || {
+        error_msg "There is not device name to remove!"
+        exit 1
+    }
+
+    if_check || {
+        error_msg "The interface $NAME does not exist!"
+        exit 1
+    }
+
+    ip link set dev $MACVLAN down
+    ip link set dev $NAME down
+    ip link delete $NAME
+    ip link delete $MACVLAN
+
+    sed -i "s/.*$NAME.*//g" $VLANCFG
+    sed -i '/^$/ d' $VLANCFG
+}
+
+update_interface()
+{
+    [ -z "$DEVICE" ] || [ -z "$IPADDR" ] || [ -z "$NETMASK" ] && error_msg "There is not enough args to update vlan device." && exit 1
+
+    BROADCAST=${BROADCAST:+"broadcast $BROADCAST"}
+
+    ip addr flush dev $DEVICE scope global
+    ip addr add $IPADDR/$NETMASK $BROADCAST dev $DEVICE
+
+    sed -i "s/ip addr add.*dev $DEVICE/ip addr add $IPADDR\/$NETMASK $BROADCAST dev $DEVICE/g" $VLANCFG
+}
+
+execute()
+{
+    [ "$RECOVERY" ] && recovery && exit 0
+    [ "$REMOVE" ] && remove_device && exit 0
+    [ "$UPDATE" ] && update_interface && exit 0
+
+    BROADCAST=${BROADCAST:+"broadcast $BROADCAST"}
+
+
+    [ -z "$DEVICE" ] || [ -z "$NAME" ] || [ -z "$VLANID" ] && error_msg "There is not enough args to add new vlan device." && exit 1
+
+    if_check && error_msg "The interface $NAME already exist!" && exit 1
+
+    ip link add link $DEVICE name $MACVLAN type macvlan
+    ip link add link $MACVLAN name $NAME type vlan id $VLANID
+    ip link set dev $MACVLAN up
+    ip link set dev $NAME up
+
+    echo "ip link add link $DEVICE name $MACVLAN type macvlan" >> $VLANCFG
+    echo "ip link add link $MACVLAN name $NAME type vlan id $VLANID" >> $VLANCFG
+    echo "ip link set dev $MACVLAN up" >> $VLANCFG
+    echo "ip link set dev $NAME up" >> $VLANCFG
+
+
+    [ -z "$IPADDR" ] || [ -z "$NETMASK" ] && error_msg "There is not enough args to set new vlan device." && exit 1
+    
+    sleep 0.1
+    ip addr add $IPADDR/$NETMASK $BROADCAST dev $NAME
+
+    echo "ip addr add $IPADDR/$NETMASK $BROADCAST dev $NAME" >> $VLANCFG
+}
+
+opt_parser()
+{
+    [ $# -eq 0 ] && error_msg "There is not any arguments!!" && exit 1
+
+    while getopts "d:i:n:v:URI:N:B:h" opt
+    do
+        case $opt in
+            d)
+                REMOVE=true
+                NAME=$OPTARG
+                MACVLAN=$NAME"mv"
+                ;;
+            
+            i)
+                DEVICE=$OPTARG
+                ;;
+
+            n)
+                NAME=$OPTARG
+                MACVLAN=$NAME"mv"
+                ;;
+            
+            v)
+                VLANID=$OPTARG
+                ;;
+
+            U)
+                UPDATE=true
+                ;;
+
+            R)
+                RECOVERY=true
+                ;;
+
+            I)
+                IPADDR=$OPTARG
+                ;;
+
+            N)
+                NETMASK=$OPTARG
+                ;;
+
+            B)
+                BROADCAST=$OPTARG
+                ;;
+
+            h)
+                help_dump
+                exit 0
+                ;;
+            *)
+                error_msg "Wrong opt: $*"
+                exit 1
+                ;;
+        esac     
+    done
+}
+
+[ -f "$VLANCFG" ] || {
+    mkdir /var/vlanif
+    touch $VLANCFG
+}
+
+opt_parser $* && execute   
+
+
